@@ -120,9 +120,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
             if(!findModus){
                 overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-            OverlayDraw.drawPositionOnOverlay(Math.round(getAverageOrientation(orientation)),overlayCanvas,OverlayDraw.CURDISCOVERABLEDOT);
+            OverlayDraw.drawPositionOnOverlay(Math.round(getAverageOrientation(orientation)), overlayCanvas, OverlayDraw.CURDISCOVERABLEDOT);
 
-                this.getWindow().getCurrentFocus().invalidate();
+                this.getWindow().getDecorView().invalidate();
             }
         }
     }
@@ -219,6 +219,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         OverlayDraw.drawPositionOnOverlay(60, overlayCanvas,  OverlayDraw.CYANDOT);
         OverlayDraw.drawPositionOnOverlay(-110, overlayCanvas, OverlayDraw.GREENDOT);
 
-        this.getWindow().getCurrentFocus().invalidate();
+        this.getWindow().getDecorView().invalidate();
     }
 }
