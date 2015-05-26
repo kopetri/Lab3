@@ -210,31 +210,31 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         Button btnMode = (Button) findViewById(R.id.btn_mode);
         EditText etxtName = (EditText) findViewById(R.id.etxt_name);
         Button btnSendPosition = (Button) findViewById(R.id.btn_sendPosition);
-        TextView txt = (TextView) findViewById(R.id.txt_headline);
         ImageView img = (ImageView) findViewById(R.id.img_background);
         ImageView imgOverlay = (ImageView) findViewById(R.id.img_overlay);
+        ImageView imgIcon =(ImageView) findViewById(R.id.img_icon);
 
         // show components for the find mode
         if (findMode) {
             this.findMode = false;
             btnMode.setText("Start Finder");
-            txt.setText("Discoverable");
             btnSendPosition.setVisibility(View.VISIBLE);
             etxtName.setVisibility(View.VISIBLE);
             //btnSendPosition.setEnabled(false);
             img.setRotation(180);
             imgOverlay.setRotation(180);
+            imgIcon.setImageResource(R.drawable.position);
 
         }
         // show components for the discoverable mode
         else {
             this.findMode = true;
             btnMode.setText("Start Discoverable");
-            txt.setText("Available Persons");
             btnSendPosition.setVisibility(View.INVISIBLE);
             etxtName.setVisibility(View.INVISIBLE);
             img.setRotation(0);
             imgOverlay.setRotation(0);
+            imgIcon.setImageResource(R.drawable.find);
             test();
         }
     }
