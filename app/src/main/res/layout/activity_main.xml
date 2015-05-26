@@ -39,6 +39,16 @@
 
     </FrameLayout>
 
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/list_persons"
+        android:layout_below="@+id/frameLayout"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/btn_mode"
+        android:choiceMode="none" />
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -63,6 +73,18 @@
         android:layout_alignParentEnd="true"
         android:visibility="invisible" />
 
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Delete Position"
+        android:id="@+id/btn_deletePosition"
+        android:layout_below="@+id/btn_sendPosition"
+        android:layout_alignRight="@+id/list_persons"
+        android:layout_alignEnd="@+id/list_persons"
+        android:visibility="invisible"
+        android:onClick="onDeletePosition" />
+
     <EditText
         android:layout_width="150dp"
         android:layout_height="wrap_content"
@@ -76,14 +98,16 @@
         android:layout_alignParentStart="true"
         android:visibility="invisible" />
 
-    <ListView
-        android:layout_width="wrap_content"
+    <TextView
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:id="@+id/list_persons"
-        android:layout_below="@+id/frameLayout"
+        android:text=""
+        android:id="@+id/txt_info"
+        android:layout_below="@+id/btn_sendPosition"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_above="@+id/btn_mode"
-        android:choiceMode="none" />
+        android:layout_alignBottom="@+id/btn_deletePosition"
+        android:textSize="10dp"
+        android:gravity="center_vertical" />
 
 </RelativeLayout>

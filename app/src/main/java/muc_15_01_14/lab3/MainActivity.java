@@ -28,7 +28,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +57,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         positionSent = false;
         findMode = true;
+        ((TextView)findViewById(R.id.txt_info)).setVisibility(View.INVISIBLE);
+        Button btnDeletePosition = (Button) findViewById(R.id.btn_deletePosition);
+        btnDeletePosition.setVisibility(View.INVISIBLE);
+        btnDeletePosition.setEnabled(false);
         final Button btnSentPosition = (Button) findViewById(R.id.btn_sendPosition);
         btnSentPosition.setVisibility(View.INVISIBLE);
         btnSentPosition.setEnabled(false);
@@ -183,16 +191,20 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         Button btnMode = (Button) findViewById(R.id.btn_mode);
         EditText etxtName = (EditText) findViewById(R.id.etxt_name);
         Button btnSendPosition = (Button) findViewById(R.id.btn_sendPosition);
+        Button btnDeletePosition = (Button) findViewById(R.id.btn_deletePosition);
         ImageView img = (ImageView) findViewById(R.id.img_background);
         ImageView imgOverlay = (ImageView) findViewById(R.id.img_overlay);
         ImageView imgIcon =(ImageView) findViewById(R.id.img_icon);
         ListView list = (ListView) findViewById(R.id.list_persons);
+        TextView txtInfo = (TextView) findViewById(R.id.txt_info);
 
         // show components for the find mode
         if (findMode) {
             this.findMode = false;
             btnMode.setText("Start Finder");
+            txtInfo.setVisibility(View.VISIBLE);
             btnSendPosition.setVisibility(View.VISIBLE);
+            btnDeletePosition.setVisibility(View.VISIBLE);
             etxtName.setVisibility(View.VISIBLE);
             list.setVisibility(View.INVISIBLE);
             //btnSendPosition.setEnabled(false);
@@ -205,7 +217,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         else {
             this.findMode = true;
             btnMode.setText("Start Discoverable");
+            txtInfo.setVisibility(View.INVISIBLE);
             btnSendPosition.setVisibility(View.INVISIBLE);
+            btnDeletePosition.setVisibility(View.INVISIBLE);
             etxtName.setVisibility(View.INVISIBLE);
             list.setVisibility(View.VISIBLE);
             img.setRotation(0);
@@ -215,7 +229,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         }
     }
 
-    // button click in send position
+    // button click on send position
     public void onSendPosition(View view) {
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(),
@@ -226,9 +240,22 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         String name = ((EditText)findViewById(R.id.etxt_name)).getText().toString().trim();
 
-        popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: "+name);
+        ((Button)findViewById(R.id.btn_deletePosition)).setEnabled(true);
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+        ((TextView) findViewById(R.id.txt_info)).setText("Username: " + name + "\nPosition sent at "+sdf.format(System.currentTimeMillis()));
+
+        popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: " + name);
     }
 
+    // button click on delete position
+    public void  onDeletePosition(View view){
+        if(positionSent){
+            positionSent=false;
+            myPosition=0;
+        }
+        ((TextView) findViewById(R.id.txt_info)).setText("");
+        ((Button)findViewById(R.id.btn_deletePosition)).setEnabled(false);
+    }
 
     // shows all persons in list on map and in list
     public void displayAvailablePersons(List<Person> persons){
