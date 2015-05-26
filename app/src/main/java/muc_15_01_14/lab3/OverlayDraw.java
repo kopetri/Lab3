@@ -1,22 +1,23 @@
 package muc_15_01_14.lab3;
 
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
-import android.util.Log;
 
 /**
  * Created by David on 21.05.2015.
  */
 public class OverlayDraw {
 
-    public static final int BLUEDOT = 0;
-    public static final int REDDOT = 1;
-    public static final int GREENDOT = 2;
-    public static final int CYANDOT = 3;
-    public static final int CURDISCOVERABLEDOT=100;
+    public static final int BLUE_DOT = 0;
+    public static final int RED_DOT = 1;
+    public static final int GREEN_DOT = 2;
+    public static final int CYAN_DOT = 3;
+    public static final int CURRENT_DISCOVERABLE_DOT =100;
+    public static final int DISCOVERABLE_DOT_VALID =101;
+    public static final int DISCOVERABLE_DOT_INVALID_0 =102;
+    public static final int DISCOVERABLE_DOT_INVALID_1 =103;
 
     public static void drawPositionOnOverlay(int angle,Canvas canvas, int paintMode) {
 
@@ -51,20 +52,29 @@ public class OverlayDraw {
         drawPaint.setStrokeCap(Paint.Cap.ROUND);
 
         switch (mode){
-            case BLUEDOT:
+            case BLUE_DOT:
                 drawPaint.setColor(Color.BLUE);
                 break;
-            case REDDOT:
+            case RED_DOT:
                 drawPaint.setColor(Color.RED);
                 break;
-            case CYANDOT:
+            case CYAN_DOT:
                 drawPaint.setColor(Color.CYAN);
                 break;
-            case GREENDOT:
+            case GREEN_DOT:
                 drawPaint.setColor(Color.GREEN);
                 break;
-            case CURDISCOVERABLEDOT:
-                drawPaint.setColor(Color.MAGENTA);
+            case CURRENT_DISCOVERABLE_DOT:
+                drawPaint.setColor(Color.GRAY);
+                break;
+            case DISCOVERABLE_DOT_VALID:
+                drawPaint.setColor(Color.GREEN);
+                break;
+            case DISCOVERABLE_DOT_INVALID_0:
+                drawPaint.setColor(Color.argb(255,255,140,0));
+                break;
+            case DISCOVERABLE_DOT_INVALID_1:
+                drawPaint.setColor(Color.RED);
                 break;
 
         }
@@ -74,5 +84,15 @@ public class OverlayDraw {
     private static float getRealtivRadius(int angle){
         return (float)(0.000028f*(Math.pow((angle+14),2.0)+10714.3f));
 
+    }
+
+    public static float transferGlobalPositionToLocal(float angle){
+        //TODO calibrate position relative to the stairs
+        return 180-angle;
+    }
+
+    public static float transferLocalPositionToGlobal(float angle){
+        //TODO calibrate position relative to the stairs
+        return 180+angle;
     }
 }

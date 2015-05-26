@@ -16,11 +16,16 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -28,38 +33,58 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends ActionBarActivity implements SensorEventListener{
+public class MainActivity extends ActionBarActivity implements SensorEventListener {
 
     private Canvas overlayCanvas;
 
-    private boolean findModus;
+    private boolean findMode;
 
     private SensorManager mSensor;
     private Sensor orientationSensor;
     private List<Float> orientation;
+
+    private float myPosition;
+    private boolean positionSent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        positionSent = false;
+        findMode = true;
+        final Button btnSentPosition = (Button) findViewById(R.id.btn_sendPosition);
+        btnSentPosition.setVisibility(View.INVISIBLE);
+        btnSentPosition.setEnabled(false);
+        final EditText etxtName = (EditText) findViewById(R.id.etxt_name);
+        etxtName.setVisibility(View.INVISIBLE);
+        etxtName.addTextChangedListener(new TextWatcher() {
+            public void afterTextChanged(Editable s) {
+                if (etxtName.getText().length() >= 2) {
+                    btnSentPosition.setEnabled(true);
+                } else {
+                    btnSentPosition.setEnabled(false);
+                }
+            }
 
-        findModus = true;
-        ((Button)findViewById(R.id.btn_sendPosition)).setVisibility(View.INVISIBLE);
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+        });
 
-        // Create Overlay
+        // create Overlay
         Bitmap backgroundBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.mensa_map_angled_north);
         Bitmap overlayBitmap = Bitmap.createBitmap(backgroundBitmap.getWidth(), backgroundBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         overlayCanvas = new Canvas(overlayBitmap);
 
 
-
-        //Attach the canvas to the ImageView
+        // attach the canvas to the ImageView
         ImageView img_overlay = (ImageView) findViewById(R.id.img_overlay);
         img_overlay.setImageDrawable(new BitmapDrawable(getResources(), overlayBitmap));
 
-
+        // initialise sensor
         orientation = new ArrayList<>();
         mSensor = (SensorManager) getSystemService(SENSOR_SERVICE);
         orientationSensor = mSensor.getDefaultSensor(Sensor.TYPE_ORIENTATION);
@@ -79,31 +104,32 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             popupDialog(this, "About", "Mobile & Ubiquitous Computing\nAssignment 3 - Mensafinder\n\nTheresa Hirzle\nSebastian Hardwig\nDavid Lehr");
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if(orientationSensor != null){
+        // register sensor
+        if (orientationSensor != null) {
             mSensor.registerListener(this, orientationSensor, SensorManager.SENSOR_DELAY_NORMAL);
         } else {
-            Log.e("Sensor","No orientation available");
+            Log.e("Sensor", "No orientation available");
             this.finish();
         }
+        setScreenMode(false);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if(orientationSensor != null){
+        // unregister sensor
+        if (orientationSensor != null) {
             mSensor.unregisterListener(this);
         }
 
@@ -111,72 +137,119 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if(event.sensor.getType()==Sensor.TYPE_ORIENTATION){
-
-            if(orientation.size()>0){
-            orientation.remove(0);
+        if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
+            // set the last 3 values to the list to build an average value
+            if (orientation.size() >= 3) {
+                orientation.remove(0);
             }
-            orientation.add(event.values[0]);
+            orientation.add(OverlayDraw.transferGlobalPositionToLocal(event.values[0]));
 
-            if(!findModus){
-                overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-            OverlayDraw.drawPositionOnOverlay(Math.round(getAverageOrientation(orientation)), overlayCanvas, OverlayDraw.CURDISCOVERABLEDOT);
-
-                this.getWindow().getDecorView().invalidate();
+            // if discovered mode is on displays own position on map
+            if (!findMode) {
+                // draw current position
+                drawCurrentPositionPoint(Math.round(getAverageOrientation(orientation)), overlayCanvas);
             }
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
     }
 
 
-    private static float getAverageOrientation(List<Float> list){
+    private void drawCurrentPositionPoint(float angle, Canvas overlayCanvas) {
+        // clears the overlay image
+        overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+
+        // select der right dot representation
+        if (positionSent) {
+            float angleDifference = Math.abs(myPosition - angle);
+            if (angleDifference < 5) {
+                // draw sent position
+                OverlayDraw.drawPositionOnOverlay(Math.round(myPosition), overlayCanvas, OverlayDraw.DISCOVERABLE_DOT_VALID);
+            } else if (angleDifference < 15) {
+                // draw current position
+                OverlayDraw.drawPositionOnOverlay(Math.round(getAverageOrientation(orientation)), overlayCanvas, OverlayDraw.CURRENT_DISCOVERABLE_DOT);
+                // draw sent position
+                OverlayDraw.drawPositionOnOverlay(Math.round(myPosition), overlayCanvas, OverlayDraw.DISCOVERABLE_DOT_INVALID_0);
+            } else {
+                // draw current position
+                OverlayDraw.drawPositionOnOverlay(Math.round(getAverageOrientation(orientation)), overlayCanvas, OverlayDraw.CURRENT_DISCOVERABLE_DOT);
+                // draw sent position
+                OverlayDraw.drawPositionOnOverlay(Math.round(myPosition), overlayCanvas, OverlayDraw.DISCOVERABLE_DOT_INVALID_1);
+            }
+        } else {
+            // draw current position
+            OverlayDraw.drawPositionOnOverlay(Math.round(getAverageOrientation(orientation)), overlayCanvas, OverlayDraw.CURRENT_DISCOVERABLE_DOT);
+        }
+
+        // set overlay invalidate to repaint image
+        ((ImageView) findViewById(R.id.img_overlay)).invalidate();
+    }
+
+    // calculates an average orientation of values in the list
+    private static float getAverageOrientation(List<Float> list) {
         float result = 0;
-        float i=0;
-        for(Float f:list){
+        float i = 0;
+        for (Float f : list) {
             i++;
             result += f;
         }
-        if(i!=0){
+        if (i != 0) {
 
-            return result/i;
+            return result / i;
         }
         return 0;
     }
 
     public void onChangeMode(View view) {
-        Button btnMode = (Button)findViewById(R.id.btn_mode);
-        Button btnSendPosition =(Button)findViewById(R.id.btn_sendPosition);
+        setScreenMode(this.findMode);
+    }
+
+    private void setScreenMode(boolean findMode) {
+        Button btnMode = (Button) findViewById(R.id.btn_mode);
+        EditText etxtName = (EditText) findViewById(R.id.etxt_name);
+        Button btnSendPosition = (Button) findViewById(R.id.btn_sendPosition);
         TextView txt = (TextView) findViewById(R.id.txt_headline);
         ImageView img = (ImageView) findViewById(R.id.img_background);
-        ImageView img_overlay = (ImageView) findViewById(R.id.img_overlay);
-        if(findModus){
-            findModus=false;
-            Log.i("findModus",""+findModus);
+        ImageView imgOverlay = (ImageView) findViewById(R.id.img_overlay);
+
+        // show components for the find mode
+        if (findMode) {
+            this.findMode = false;
             btnMode.setText("Start Finder");
             txt.setText("Discoverable");
             btnSendPosition.setVisibility(View.VISIBLE);
+            etxtName.setVisibility(View.VISIBLE);
             //btnSendPosition.setEnabled(false);
             img.setRotation(180);
-            img_overlay.setRotation(180);
+            imgOverlay.setRotation(180);
 
-        }else{
-            Log.i("findModus",""+findModus);
-            findModus=true;
+        }
+        // show components for the discoverable mode
+        else {
+            this.findMode = true;
             btnMode.setText("Start Discoverable");
             txt.setText("Available Persons");
             btnSendPosition.setVisibility(View.INVISIBLE);
+            etxtName.setVisibility(View.INVISIBLE);
             img.setRotation(0);
-            img_overlay.setRotation(0);
+            imgOverlay.setRotation(0);
             test();
         }
     }
 
     public void onSendPosition(View view) {
-        popupDialog(this,"Orientation","x: "+Float.toString(getAverageOrientation(orientation)));
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getWindowToken(),
+                InputMethodManager.RESULT_UNCHANGED_SHOWN);
+        myPosition = getAverageOrientation(orientation);
+        positionSent = true;
+        drawCurrentPositionPoint(myPosition, overlayCanvas);
+
+        String name = ((EditText)findViewById(R.id.etxt_name)).getText().toString().trim();
+
+        popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: "+name);
     }
 
 
@@ -214,10 +287,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         overlayCanvas.drawCircle(x / 1.97f, y / 1.78f, 20, drawPaint);
 
 
-        OverlayDraw.drawPositionOnOverlay(0, overlayCanvas, OverlayDraw.BLUEDOT);
-        OverlayDraw.drawPositionOnOverlay(-30, overlayCanvas,  OverlayDraw.REDDOT);
-        OverlayDraw.drawPositionOnOverlay(60, overlayCanvas,  OverlayDraw.CYANDOT);
-        OverlayDraw.drawPositionOnOverlay(-110, overlayCanvas, OverlayDraw.GREENDOT);
+        OverlayDraw.drawPositionOnOverlay(0, overlayCanvas, OverlayDraw.BLUE_DOT);
+        OverlayDraw.drawPositionOnOverlay(-30, overlayCanvas, OverlayDraw.RED_DOT);
+        OverlayDraw.drawPositionOnOverlay(60, overlayCanvas, OverlayDraw.CYAN_DOT);
+        OverlayDraw.drawPositionOnOverlay(-110, overlayCanvas, OverlayDraw.GREEN_DOT);
 
         this.getWindow().getDecorView().invalidate();
     }

@@ -62,8 +62,22 @@
         android:layout_height="wrap_content"
         android:text="Send Position"
         android:id="@+id/btn_sendPosition"
+        android:onClick="onSendPosition"
         android:layout_above="@+id/btn_mode"
-        android:layout_centerHorizontal="true"
-        android:onClick="onSendPosition" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:text="Name"
+        android:ems="10"
+        android:id="@+id/etxt_name"
+        android:layout_alignTop="@+id/btn_sendPosition"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignRight="@+id/txt_headline"
+        android:layout_alignEnd="@+id/txt_headline" />
 
 </RelativeLayout>
