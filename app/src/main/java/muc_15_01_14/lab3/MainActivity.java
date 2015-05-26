@@ -152,7 +152,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                 JSONObject jObject = new JSONObject(s);
                 JSONArray jArray = jObject.getJSONArray("list");
                 if (jArray.length() > 0) {
-                    Toast.makeText(getApplicationContext(),"Response received",Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getApplicationContext(),"Response received",Toast.LENGTH_LONG).show();
                     List<Person> list = new ArrayList<Person>();
                     for (int i = 0; i < jArray.length(); i++) {
                         JSONObject obj = jArray.getJSONObject(i);
