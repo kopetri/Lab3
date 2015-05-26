@@ -142,11 +142,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onPostTaskCompleted(String s) {
         if(s.equals(String.valueOf(202))){
-            Toast.makeText(getApplicationContext(),"202 Accepted",Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(),"202 Accepted",Toast.LENGTH_LONG).show();
         } else if(s.equals(String.valueOf(404))) {
-            Toast.makeText(getApplicationContext(),"404 Not Found",Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(),"404 Not Found",Toast.LENGTH_LONG).show();
         } else if(s.equals(String.valueOf(204))) {
-            Toast.makeText(getApplicationContext(),"204 No Content",Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(),"204 No Content",Toast.LENGTH_LONG).show();
         } else {
             try {
                 JSONObject jObject = new JSONObject(s);
@@ -160,8 +160,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                     }
                     displayAvailablePersons(list);
                 } else {
-                    Toast.makeText(getApplicationContext(),"nothing received",Toast.LENGTH_LONG).show();
-                    test();
+                    //Toast.makeText(getApplicationContext(),"nothing received",Toast.LENGTH_LONG).show();
+                    //test();
+                    List<Person> list = new ArrayList<Person>();
+                    displayAvailablePersons(list);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
