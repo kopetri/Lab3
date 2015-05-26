@@ -7,10 +7,12 @@ public class Person {
 
     private String user;
     private int orientation;
+    private long age;
 
-    public Person(String user, int orientation){
+    public Person(String user, int orientation, long age){
         this.user = user;
         this.orientation = orientation;
+        this.age = age;
     }
 
     public String getUser(){
@@ -20,4 +22,10 @@ public class Person {
     public int getOrientation(){
         return orientation;
     }
+
+    public long getAge(){
+        return age;
+    }
+
+
 }
