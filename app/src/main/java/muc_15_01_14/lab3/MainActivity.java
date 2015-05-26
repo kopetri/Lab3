@@ -269,6 +269,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     }
 
 
+    public void availablePersons(List<Person> persons){
+
+
+    }
+
     private void test() {
 
         overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
