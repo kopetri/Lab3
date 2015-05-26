@@ -22,12 +22,12 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,11 +56,13 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         final Button btnSentPosition = (Button) findViewById(R.id.btn_sendPosition);
         btnSentPosition.setVisibility(View.INVISIBLE);
         btnSentPosition.setEnabled(false);
+
+        // text flied for user name
         final EditText etxtName = (EditText) findViewById(R.id.etxt_name);
         etxtName.setVisibility(View.INVISIBLE);
         etxtName.addTextChangedListener(new TextWatcher() {
             public void afterTextChanged(Editable s) {
-                if (etxtName.getText().length() >= 2) {
+                if (etxtName.getText().length() >= 4 && etxtName.getText().length() <= 12) {
                     btnSentPosition.setEnabled(true);
                 } else {
                     btnSentPosition.setEnabled(false);
@@ -147,7 +149,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             // if discovered mode is on displays own position on map
             if (!findMode) {
                 // draw current position
-                drawCurrentPositionPoint(Math.round(getAverageOrientation(orientation)), overlayCanvas);
+                displayCurrentPositionPoint(Math.round(getAverageOrientation(orientation)), overlayCanvas);
             }
         }
     }
@@ -157,7 +159,94 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     }
 
 
-    private void drawCurrentPositionPoint(float angle, Canvas overlayCanvas) {
+    // calculates an average orientation of values in the list
+    private static float getAverageOrientation(List<Float> list) {
+        float result = 0;
+        float i = 0;
+        for (Float f : list) {
+            i++;
+            result += f;
+        }
+        if (i != 0) {
+
+            return result / i;
+        }
+        return 0;
+    }
+
+    // button click on select mode
+    public void onChangeMode(View view) {
+        setScreenMode(this.findMode);
+    }
+
+    private void setScreenMode(boolean findMode) {
+        Button btnMode = (Button) findViewById(R.id.btn_mode);
+        EditText etxtName = (EditText) findViewById(R.id.etxt_name);
+        Button btnSendPosition = (Button) findViewById(R.id.btn_sendPosition);
+        ImageView img = (ImageView) findViewById(R.id.img_background);
+        ImageView imgOverlay = (ImageView) findViewById(R.id.img_overlay);
+        ImageView imgIcon =(ImageView) findViewById(R.id.img_icon);
+        ListView list = (ListView) findViewById(R.id.list_persons);
+
+        // show components for the find mode
+        if (findMode) {
+            this.findMode = false;
+            btnMode.setText("Start Finder");
+            btnSendPosition.setVisibility(View.VISIBLE);
+            etxtName.setVisibility(View.VISIBLE);
+            list.setVisibility(View.INVISIBLE);
+            //btnSendPosition.setEnabled(false);
+            img.setRotation(180);
+            imgOverlay.setRotation(180);
+            imgIcon.setImageResource(R.drawable.position);
+
+        }
+        // show components for the discoverable mode
+        else {
+            this.findMode = true;
+            btnMode.setText("Start Discoverable");
+            btnSendPosition.setVisibility(View.INVISIBLE);
+            etxtName.setVisibility(View.INVISIBLE);
+            list.setVisibility(View.VISIBLE);
+            img.setRotation(0);
+            imgOverlay.setRotation(0);
+            imgIcon.setImageResource(R.drawable.find);
+            test();
+        }
+    }
+
+    // button click in send position
+    public void onSendPosition(View view) {
+        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getWindowToken(),
+                InputMethodManager.RESULT_UNCHANGED_SHOWN);
+        myPosition = getAverageOrientation(orientation);
+        positionSent = true;
+        displayCurrentPositionPoint(myPosition, overlayCanvas);
+
+        String name = ((EditText)findViewById(R.id.etxt_name)).getText().toString().trim();
+
+        popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: "+name);
+    }
+
+
+    // shows all persons in list on map and in list
+    public void displayAvailablePersons(List<Person> persons){
+        persons = OverlayDraw.addColorsToPersons(this,persons);
+        ArrayAdapter<Person> adapter = new PersonArrayAdapter(this, R.layout.person_item,persons);
+        ListView list = (ListView) findViewById(R.id.list_persons);
+        list.setAdapter(adapter);
+
+        overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+        for (Person p:persons){
+            OverlayDraw.drawPositionOnOverlay(p.getOrientation(), overlayCanvas, p.getColor());
+        }
+
+        // set overlay invalidate to repaint image
+        ((ImageView) findViewById(R.id.img_overlay)).invalidate();
+    }
+
+    private void displayCurrentPositionPoint(float angle, Canvas overlayCanvas) {
         // clears the overlay image
         overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
 
@@ -187,72 +276,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         ((ImageView) findViewById(R.id.img_overlay)).invalidate();
     }
 
-    // calculates an average orientation of values in the list
-    private static float getAverageOrientation(List<Float> list) {
-        float result = 0;
-        float i = 0;
-        for (Float f : list) {
-            i++;
-            result += f;
-        }
-        if (i != 0) {
-
-            return result / i;
-        }
-        return 0;
-    }
-
-    public void onChangeMode(View view) {
-        setScreenMode(this.findMode);
-    }
-
-    private void setScreenMode(boolean findMode) {
-        Button btnMode = (Button) findViewById(R.id.btn_mode);
-        EditText etxtName = (EditText) findViewById(R.id.etxt_name);
-        Button btnSendPosition = (Button) findViewById(R.id.btn_sendPosition);
-        ImageView img = (ImageView) findViewById(R.id.img_background);
-        ImageView imgOverlay = (ImageView) findViewById(R.id.img_overlay);
-        ImageView imgIcon =(ImageView) findViewById(R.id.img_icon);
-
-        // show components for the find mode
-        if (findMode) {
-            this.findMode = false;
-            btnMode.setText("Start Finder");
-            btnSendPosition.setVisibility(View.VISIBLE);
-            etxtName.setVisibility(View.VISIBLE);
-            //btnSendPosition.setEnabled(false);
-            img.setRotation(180);
-            imgOverlay.setRotation(180);
-            imgIcon.setImageResource(R.drawable.position);
-
-        }
-        // show components for the discoverable mode
-        else {
-            this.findMode = true;
-            btnMode.setText("Start Discoverable");
-            btnSendPosition.setVisibility(View.INVISIBLE);
-            etxtName.setVisibility(View.INVISIBLE);
-            img.setRotation(0);
-            imgOverlay.setRotation(0);
-            imgIcon.setImageResource(R.drawable.find);
-            test();
-        }
-    }
-
-    public void onSendPosition(View view) {
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(view.getWindowToken(),
-                InputMethodManager.RESULT_UNCHANGED_SHOWN);
-        myPosition = getAverageOrientation(orientation);
-        positionSent = true;
-        drawCurrentPositionPoint(myPosition, overlayCanvas);
-
-        String name = ((EditText)findViewById(R.id.etxt_name)).getText().toString().trim();
-
-        popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: "+name);
-    }
-
-
     // Popup Dialog
     public static void popupDialog(Context context, String title, String text) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
@@ -268,20 +291,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         alert.show();
     }
 
-
-    public void availablePersons(List<Person> persons){
-
-
-    }
-
     private void test() {
-
-        overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-
         int x = overlayCanvas.getWidth();
         int y = overlayCanvas.getHeight();
         Log.i("Overlay Dimension (x,y)", "(" + x + "," + y + ")");
 
+        // yellow test dot
         Paint drawPaint = new Paint();
         drawPaint.setAntiAlias(true);
         drawPaint.setStrokeWidth(5);
@@ -292,11 +307,17 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         overlayCanvas.drawCircle(x / 1.97f, y / 1.78f, 20, drawPaint);
 
 
-        OverlayDraw.drawPositionOnOverlay(0, overlayCanvas, OverlayDraw.BLUE_DOT);
-        OverlayDraw.drawPositionOnOverlay(-30, overlayCanvas, OverlayDraw.RED_DOT);
-        OverlayDraw.drawPositionOnOverlay(60, overlayCanvas, OverlayDraw.CYAN_DOT);
-        OverlayDraw.drawPositionOnOverlay(-110, overlayCanvas, OverlayDraw.GREEN_DOT);
 
-        this.getWindow().getDecorView().invalidate();
+        List<Person> list = new ArrayList<Person>();
+        list.add(new Person("Sebastian", -110, 20));
+        list.add(new Person("Teresa", 20, 1020));
+        list.add(new Person("David", 60, 160));
+        list.add(new Person("Test", -26, 620));
+
+
+
+        displayAvailablePersons(list);
+
+
     }
 }
