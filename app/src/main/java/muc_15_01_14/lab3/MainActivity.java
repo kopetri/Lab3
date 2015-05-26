@@ -201,7 +201,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         // show components for the find mode
         if (findMode) {
             this.findMode = false;
-            btnMode.setText("Start Finder");
+            btnMode.setText("Switch Finder");
             txtInfo.setVisibility(View.VISIBLE);
             btnSendPosition.setVisibility(View.VISIBLE);
             btnDeletePosition.setVisibility(View.VISIBLE);
@@ -216,7 +216,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         // show components for the discoverable mode
         else {
             this.findMode = true;
-            btnMode.setText("Start Discoverable");
+            btnMode.setText("Switch to Discoverable");
             txtInfo.setVisibility(View.INVISIBLE);
             btnSendPosition.setVisibility(View.INVISIBLE);
             btnDeletePosition.setVisibility(View.INVISIBLE);

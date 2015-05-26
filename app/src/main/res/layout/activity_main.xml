@@ -52,7 +52,7 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Discoverable"
+        android:text="Switch to Discoverable"
         android:id="@+id/btn_mode"
         android:layout_alignParentBottom="true"
         android:layout_alignLeft="@+id/frameLayout"
