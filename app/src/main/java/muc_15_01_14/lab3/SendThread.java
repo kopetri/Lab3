@@ -10,6 +10,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.ByteArrayOutputStream;
@@ -18,28 +19,34 @@ import java.io.IOException;
 /**
  * Created by Sebastian on 26.05.2015.
  */
-public class SendThread extends AsyncTask<String,String,String> {
+public class SendThread extends AsyncTask<HttpUriRequest,String,String> {
+    private OnPostExecuteListener listener;
     @Override
-    protected String doInBackground(String... uri) {
+    protected String doInBackground(HttpUriRequest... httpUriRequests) {
         HttpClient httpclient = new DefaultHttpClient();
         HttpResponse response;
-        HttpPut httpPut = new HttpPut(uri[0]);
         String responseString = null;
         try {
-            response = httpclient.execute(httpPut);
+            response = httpclient.execute(httpUriRequests[0]);
             StatusLine statusLine = response.getStatusLine();
-            if(statusLine.getStatusCode() == HttpStatus.SC_OK){
-                return "200 OK";
-            } else{
-                //Closes the connection.
-                response.getEntity().getContent().close();
-                throw new IOException(statusLine.getReasonPhrase());
-            }
+            return String.valueOf(statusLine.getStatusCode());
         } catch (ClientProtocolException e) {
-            //TODO Handle problems..
+            e.printStackTrace();
         } catch (IOException e) {
-            //TODO Handle problems..
+            e.printStackTrace();
         }
-        return "ERROR";
+        return null;
+    }
+
+    @Override
+    protected void onPostExecute(String s) {
+        super.onPostExecute(s);
+        if(listener != null && s != null){
+            listener.onPostTaskCompleted(s);
+        }
+    }
+
+    public void setListener(OnPostExecuteListener listener) {
+        this.listener = listener;
     }
 }

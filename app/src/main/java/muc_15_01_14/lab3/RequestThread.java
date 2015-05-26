@@ -14,8 +14,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import muc_15_01_14.lab3.interfaces.OnPostExecuteListener;
-
 /**
  * Created by Sebastian on 25.05.2015.
  */
@@ -50,19 +48,10 @@ public class RequestThread extends AsyncTask<String,String,String> {
 
     @Override
     protected void onPostExecute(String s) {
-        String tmp = "{time:2011-05-31T14:24:34.020Z," +
-                "list:[" +
-                "{user:florian,age:6,orientation:120}," +
-                "{user:benjamin,age:4,orientation:165}," +
-                "{user:bastian,age:2,orientation:123}" +
-                "]}";
-        tmp = "ERROR";
+        String tmp = "{time:2015-05-26T20:32:27.364Z,list:[]}";
         if(s != null){
             super.onPostExecute(s);
-            //Log.i("RESPONSE", s);
             tmp = s;
-        } else {
-            //Log.i("RESPONSE",tmp);
         }
         if(listener != null){
             listener.onPostTaskCompleted(tmp);
