@@ -20,6 +20,8 @@ import java.io.IOException;
 public class RequestThread extends AsyncTask<String,String,String> {
     private OnPostExecuteListener listener;
 
+    public RequestThread(OnPostExecuteListener listener){this.listener = listener;}
+
     @Override
     protected String doInBackground(String[] uri) {
         HttpClient httpclient = new DefaultHttpClient();
@@ -39,9 +41,9 @@ public class RequestThread extends AsyncTask<String,String,String> {
                 throw new IOException(statusLine.getReasonPhrase());
             }
         } catch (ClientProtocolException e) {
-            //TODO Handle problems..
+            //ignore
         } catch (IOException e) {
-            //TODO Handle problems..
+            //ignore
         }
         return responseString;
     }
@@ -54,11 +56,9 @@ public class RequestThread extends AsyncTask<String,String,String> {
             tmp = s;
         }
         if(listener != null){
+
+            // inform listeners
             listener.onPostTaskCompleted(tmp);
         }
-    }
-
-    public void setListener(OnPostExecuteListener listener) {
-        this.listener = listener;
     }
 }

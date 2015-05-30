@@ -44,7 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends ActionBarActivity implements SensorEventListener, OnPostExecuteListener {
+public class MainActivity extends ActionBarActivity implements SensorEventListener, OnPostExecuteListener, OnStreamUpdateListener {
 
     private Canvas overlayCanvas;
 
@@ -56,21 +56,17 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     private float myPosition;
     private boolean positionSent;
-
+    private StreamThread streamThread;
     private String username;
+    private List<Person> m_persons;
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        final RequestThread requestThread = new RequestThread();
-        final SendThread sendThread = new SendThread();
-        requestThread.setListener(this);
-
-
-
+        streamThread = new StreamThread(this);
         positionSent = false;
         findMode = true;
         ((TextView)findViewById(R.id.txt_info)).setVisibility(View.INVISIBLE);
@@ -80,6 +76,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         final Button btnSentPosition = (Button) findViewById(R.id.btn_sendPosition);
         btnSentPosition.setVisibility(View.INVISIBLE);
         btnSentPosition.setEnabled(false);
+
 
         // text flied for user name
         final EditText etxtName = (EditText) findViewById(R.id.etxt_name);
@@ -142,17 +139,17 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onPostTaskCompleted(String s) {
         if(s.equals(String.valueOf(202))){
-            Toast.makeText(getApplicationContext(),"202 Accepted",Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(),"202 Accepted",Toast.LENGTH_LONG).show();
         } else if(s.equals(String.valueOf(404))) {
-            Toast.makeText(getApplicationContext(),"404 Not Found",Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(),"404 Not Found",Toast.LENGTH_LONG).show();
         } else if(s.equals(String.valueOf(204))) {
-            Toast.makeText(getApplicationContext(),"204 No Content",Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(),"204 No Content",Toast.LENGTH_LONG).show();
         } else {
             try {
                 JSONObject jObject = new JSONObject(s);
                 JSONArray jArray = jObject.getJSONArray("list");
                 if (jArray.length() > 0) {
-                    Toast.makeText(getApplicationContext(),"Response received",Toast.LENGTH_LONG).show();
+                    //Toast.makeText(getApplicationContext(),"Response received",Toast.LENGTH_LONG).show();
                     List<Person> list = new ArrayList<Person>();
                     for (int i = 0; i < jArray.length(); i++) {
                         JSONObject obj = jArray.getJSONObject(i);
@@ -160,12 +157,19 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                     }
                     displayAvailablePersons(list);
                 } else {
-                    Toast.makeText(getApplicationContext(),"nothing received",Toast.LENGTH_LONG).show();
-                    test();
+                    //Toast.makeText(getApplicationContext(),"nothing received",Toast.LENGTH_LONG).show();
+                    //test();
+                    List<Person> list = new ArrayList<Person>();
+                    displayAvailablePersons(list);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+        }
+        if(!streamThread.isAlive()) {
+            streamThread.interrupt();
+            streamThread = new StreamThread(this);
+            streamThread.start();
         }
     }
 
@@ -178,6 +182,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             Log.e("Sensor", "No orientation available");
             this.finish();
         }
+
         setScreenMode(false);
     }
 
@@ -188,7 +193,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         if (orientationSensor != null) {
             mSensor.unregisterListener(this);
         }
-
+        if(streamThread.isAlive()){
+            streamThread.interrupt();
+        }
     }
 
     @Override
@@ -271,8 +278,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             img.setRotation(0);
             imgOverlay.setRotation(0);
             imgIcon.setImageResource(R.drawable.find);
-            RequestThread requestThread = new RequestThread();
-            requestThread.setListener(this);
+
+            // get the snapshot from the server
+            RequestThread requestThread = new RequestThread(this);
             requestThread.execute("http://barracuda-vm9.informatik.uni-ulm.de/orientations/snapshot");
         }
     }
@@ -294,11 +302,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         ((TextView) findViewById(R.id.txt_info)).setText("Username: " + name + "\nPosition sent at "+sdf.format(System.currentTimeMillis()));
 
         //popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: " + name);
-        SendThread sendThread = new SendThread();
-        sendThread.setListener(this);
+        SendThread sendThread = new SendThread(this);
         int o = (int)getAverageOrientation(orientation);
-        if(o < 0)
-            o += 360;
+        Log.i("DEGREE",String.valueOf(o));
+        o = (int)OverlayDraw.transferLocalPositionToGlobal(o);
+        Log.i("DEGREE","to "+String.valueOf(o));
         HttpPut httpPut = new HttpPut("http://barracuda-vm9.informatik.uni-ulm.de/user/"+name+"/orientation/"+Integer.toString(o));
         sendThread.execute(httpPut);
     }
@@ -312,8 +320,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         ((TextView) findViewById(R.id.txt_info)).setText("");
         ((Button)findViewById(R.id.btn_deletePosition)).setEnabled(false);
         if(username!=null) {
-            SendThread sendThread = new SendThread();
-            sendThread.setListener(this);
+            SendThread sendThread = new SendThread(this);
             HttpDelete httpDelete = new HttpDelete("http://barracuda-vm9.informatik.uni-ulm.de/user/" + username + "/orientation");
             sendThread.execute(httpDelete);
         }
@@ -321,19 +328,27 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     // shows all persons in list on map and in list
     public void displayAvailablePersons(List<Person> persons){
+
+        m_persons = persons;
         persons = OverlayDraw.addColorsToPersons(this,persons);
-        ArrayAdapter<Person> adapter = new PersonArrayAdapter(this, R.layout.person_item,persons);
-        ListView list = (ListView) findViewById(R.id.list_persons);
-        list.setAdapter(adapter);
+        final ArrayAdapter<Person> adapter = new PersonArrayAdapter(this, R.layout.person_item,persons);
+        final ListView list = (ListView) findViewById(R.id.list_persons);
 
         overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         for (Person p:persons){
             OverlayDraw.drawPositionOnOverlay(p.getOrientation(), overlayCanvas, p.getColor());
         }
-
-        // set overlay invalidate to repaint image
-        ((ImageView) findViewById(R.id.img_overlay)).invalidate();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                list.setAdapter(adapter);
+                // set overlay invalidate to repaint image
+                ((ImageView) findViewById(R.id.img_overlay)).invalidate();
+            }
+        });
     }
+
+
 
     private void displayCurrentPositionPoint(float angle, Canvas overlayCanvas) {
         // clears the overlay image
@@ -380,6 +395,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         alert.show();
     }
 
+
+    // just for debug reasons
     private void test() {
         int x = overlayCanvas.getWidth();
         int y = overlayCanvas.getHeight();
@@ -406,5 +423,55 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
 
         displayAvailablePersons(list);
+    }
+
+    // listens for a push notification of the server
+    @Override
+    public void onUpdate(Person person) {
+
+        // checks if any thing there to update
+        // else try to get a snapshot
+        if(m_persons.isEmpty()){
+            RequestThread requestThread = new RequestThread(this);
+            requestThread.execute("http://barracuda-vm9.informatik.uni-ulm.de/orientations/snapshot");
+        }
+
+        // check if person is already in m_persons
+        boolean contains = false;
+
+        // check if person was tagged as 'logout' and needs to be removed from m_persons
+        Person remove = null;
+        for (Person p : m_persons) {
+            if (p.getUser().equals(person.getUser())) {
+                contains = true;
+                if(person.getOrientation()==-99999){
+                    remove = p;
+                } else {
+
+                    // update orientation
+                    p.setOrientation(person.getOrientation());
+                }
+            }
+        }
+        if(remove!=null){
+            m_persons.remove(remove);
+        }
+        if(!contains){
+            m_persons.add(person);
+        }
+
+        Log.i("update","user: "+person.getUser());
+
+        // make the changes visible in the view
+        displayAvailablePersons(m_persons);
+    }
+
+    // listens for the EOF notification from the server
+    // restarts the StreamThread
+    @Override
+    public void onEOF() {
+        streamThread.interrupt();
+        streamThread = new StreamThread(this);
+        streamThread.start();
     }
 }
