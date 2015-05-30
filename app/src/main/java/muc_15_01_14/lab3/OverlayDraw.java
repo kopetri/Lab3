@@ -77,7 +77,7 @@ public class OverlayDraw {
 
     public static float transferGlobalPositionToLocal(float angle) {
         //TODO calibrate position relative to the stairs
-        return 180 - angle;
+        return angle - 180;
     }
 
     public static float transferLocalPositionToGlobal(float angle) {

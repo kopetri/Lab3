@@ -43,4 +43,8 @@ public class Person {
         }
     }
 
+    public void setOrientation(int orientation) {
+        this.orientation = orientation;
+    }
+
 }
