@@ -70,7 +70,8 @@ public class StreamThread extends Thread {
                                     jObject = jObject.getJSONObject("update");
 
                                     // extract attributes
-                                    person = new Person(jObject.getString("user"), (int)OverlayDraw.transferGlobalPositionToLocal(jObject.getInt("orientation")), 0);
+                                    int o = jObject.getInt("orientation");
+                                    person = new Person(jObject.getString("user"),o, 0);
 
                                 // check for logout attribute
                                 } else if (jObject.has("logout")) {

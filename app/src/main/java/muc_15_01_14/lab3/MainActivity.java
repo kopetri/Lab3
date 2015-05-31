@@ -304,9 +304,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         //popupDialog(this, "Orientation", "x: " + Float.toString(getAverageOrientation(orientation)) + "\n name: " + name);
         SendThread sendThread = new SendThread(this);
         int o = (int)getAverageOrientation(orientation);
-        Log.i("DEGREE",String.valueOf(o));
         o = (int)OverlayDraw.transferLocalPositionToGlobal(o);
-        Log.i("DEGREE","to "+String.valueOf(o));
         HttpPut httpPut = new HttpPut("http://barracuda-vm9.informatik.uni-ulm.de/user/"+name+"/orientation/"+Integer.toString(o));
         sendThread.execute(httpPut);
     }
@@ -336,7 +334,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         overlayCanvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
         for (Person p:persons){
-            OverlayDraw.drawPositionOnOverlay(p.getOrientation(), overlayCanvas, p.getColor());
+            OverlayDraw.drawPositionOnOverlay((int) OverlayDraw.transferGlobalPositionToLocal(p.getOrientation()), overlayCanvas, p.getColor());
         }
         runOnUiThread(new Runnable() {
             @Override
@@ -473,5 +471,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         streamThread.interrupt();
         streamThread = new StreamThread(this);
         streamThread.start();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        streamThread.interrupt();
     }
 }

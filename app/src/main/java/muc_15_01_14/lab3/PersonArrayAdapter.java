@@ -43,7 +43,7 @@ public class PersonArrayAdapter extends ArrayAdapter<Person>{
         TextView time = (TextView) itemView.findViewById(R.id.txt_time);
 
         space.setBackgroundColor(persons.get(position).getColor());
-        text.setText(persons.get(position).getUser() + " | " + persons.get(position).getOrientation());
+        text.setText(persons.get(position).getUser() + " | local: " + (int)OverlayDraw.transferGlobalPositionToLocal(persons.get(position).getOrientation()));
 
 
         time.setText("Position uploaded " +  persons.get(position).getAge()/60 +" minutes ago");
